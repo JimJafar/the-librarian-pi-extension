@@ -1,5 +1,12 @@
-import { describe, expect, it } from "vitest";
-import { buildStateLocation, readConfig } from "../extensions/librarian/config.js";
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, basename } from "node:path";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import {
+  buildStateLocation,
+  inferProjectKey,
+  readConfig,
+} from "../extensions/librarian/config.js";
 
 describe("readConfig", () => {
   it("is dormant without endpoint + token", () => {
@@ -59,5 +66,40 @@ describe("buildStateLocation", () => {
   it("omits projectKey when absent", () => {
     const loc = buildStateLocation("/work/proj");
     expect(loc.projectKey).toBeUndefined();
+  });
+});
+
+describe("inferProjectKey", () => {
+  let base: string;
+  beforeEach(() => {
+    base = mkdtempSync(join(tmpdir(), "lib-proj-"));
+  });
+  afterEach(() => {
+    rmSync(base, { recursive: true, force: true });
+  });
+
+  it("uses the git repo directory name when inside a repo", () => {
+    const repo = join(base, "my-repo");
+    const nested = join(repo, "packages", "thing");
+    mkdirSync(nested, { recursive: true });
+    mkdirSync(join(repo, ".git"));
+    expect(inferProjectKey(nested)).toBe("my-repo");
+  });
+
+  it("treats a .git file (worktree/submodule) as a repo root", () => {
+    const repo = join(base, "wt-repo");
+    mkdirSync(repo, { recursive: true });
+    writeFileSync(join(repo, ".git"), "gitdir: /elsewhere");
+    expect(inferProjectKey(repo)).toBe("wt-repo");
+  });
+
+  it("falls back to the folder name when not in a repo", () => {
+    const dir = join(base, "loose-folder");
+    mkdirSync(dir, { recursive: true });
+    expect(inferProjectKey(dir)).toBe("loose-folder");
+  });
+
+  it("returns the basename of a deep path with no repo", () => {
+    expect(inferProjectKey(base)).toBe(basename(base));
   });
 });
