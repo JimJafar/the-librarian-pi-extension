@@ -100,18 +100,19 @@ export default function librarian(pi: ExtensionAPI): void {
     ctx.ui.setStatus(STATUS_KEY, label);
   }
 
-  // --- Per-turn activity accounting (feeds the checkpoint gate) ------------
-  let turnToolCalls = 0;
-  let turnFiles = 0;
-
-  pi.on("agent_start", () => {
-    turnToolCalls = 0;
-    turnFiles = 0;
-  });
+  // --- Activity accounting since the last checkpoint ----------------------
+  // The checkpoint gate expects deltas *since the last checkpoint* (§5.3), so we
+  // accumulate across turns and reset only when a checkpoint actually fires.
+  let toolCalls = 0;
+  let filesTouched = 0;
+  function resetActivity(): void {
+    toolCalls = 0;
+    filesTouched = 0;
+  }
 
   pi.on("tool_call", (event) => {
-    turnToolCalls += 1;
-    if (FILE_MUTATING_TOOLS.has(event.toolName)) turnFiles += 1;
+    toolCalls += 1;
+    if (FILE_MUTATING_TOOLS.has(event.toolName)) filesTouched += 1;
   });
 
   // --- Auto start/resume + privacy gate -----------------------------------
@@ -128,15 +129,17 @@ export default function librarian(pi: ExtensionAPI): void {
 
   // --- Checkpoints --------------------------------------------------------
   pi.on("agent_end", async (_event, ctx) => {
-    await getOrchestrator(ctx.cwd).handleCheckpoint({
+    const outcome = await getOrchestrator(ctx.cwd).handleCheckpoint({
       trigger: "activity",
-      toolCalls: turnToolCalls,
-      filesTouched: turnFiles,
+      toolCalls,
+      filesTouched,
     });
+    if (outcome.action === "checkpointed") resetActivity();
   });
 
   pi.on("session_compact", async (_event, ctx) => {
-    await getOrchestrator(ctx.cwd).handleCheckpoint({ trigger: "compaction" });
+    const outcome = await getOrchestrator(ctx.cwd).handleCheckpoint({ trigger: "compaction" });
+    if (outcome.action === "checkpointed") resetActivity();
   });
 
   // --- Pause on shutdown (never end) --------------------------------------

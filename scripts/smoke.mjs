@@ -65,7 +65,6 @@ const EXPECTED_COMMANDS = [
   "lib-toggle-private",
 ];
 const EXPECTED_EVENTS = [
-  "agent_start",
   "tool_call",
   "input",
   "agent_end",
