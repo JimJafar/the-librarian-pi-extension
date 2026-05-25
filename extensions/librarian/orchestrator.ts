@@ -483,8 +483,13 @@ export function createOrchestrator(deps: OrchestratorDeps): Orchestrator {
     },
 
     list(includeEnded) {
+      // Cross-harness on purpose: /lib-session-list must surface sessions from
+      // ANY harness so work started in Claude/Codex/etc. can be resumed in Pi.
+      // `harness` is a server-side FILTER (cwd/project_key only rank), so passing
+      // harness: "pi" here would hide every non-Pi session — the opposite of the
+      // handover contract. (Auto-resume in resolveSession DOES scope to this
+      // harness, to avoid silently auto-attaching Pi to another harness's session.)
       return client.list({
-        harness: location.harness,
         ...(includeEnded ? { includeEnded: true } : { statuses: ["active", "paused"] }),
         ...(location.cwd !== undefined ? { cwd: location.cwd } : {}),
         ...(location.projectKey !== undefined ? { projectKey: location.projectKey } : {}),
