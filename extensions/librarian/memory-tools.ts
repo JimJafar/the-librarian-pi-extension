@@ -11,9 +11,18 @@
 // are intentionally NOT exposed — the extension owns the session lifecycle.
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { StringEnum } from "@earendil-works/pi-ai";
-import { Type } from "typebox";
+import { Type, type TSchema } from "typebox";
 import type { McpClient } from "./vendor/mcp-client.js";
+
+// A string-enum schema — `{ type: "string", enum: [...] }`, the Google/Gemini-
+// compatible shape that @earendil-works/pi-ai's StringEnum produces. We build it
+// with typebox's Type.Unsafe instead of importing pi-ai: `typebox` is aliased by
+// Pi's extension loader in every distribution (the built-in tools import it), but
+// the `@earendil-works/pi-ai` specifier is NOT reliably aliased across Pi versions
+// / scopes (it fails to resolve on some installs).
+function stringEnum<T extends string>(values: readonly T[]): TSchema {
+  return Type.Unsafe<T>({ type: "string", enum: [...values] });
+}
 
 // Drop undefined values so optional args aren't sent as JSON nulls.
 function compact(obj: Record<string, unknown>): Record<string, unknown> {
@@ -32,7 +41,7 @@ const memoryInput = Type.Object({
   category: Type.String({
     description: "Memory category, e.g. user, project, reference, preference.",
   }),
-  visibility: Type.Optional(StringEnum(["common", "agent_private"] as const)),
+  visibility: Type.Optional(stringEnum(["common", "agent_private"] as const)),
   scope: Type.Optional(Type.String()),
   project_key: Type.Optional(Type.String()),
   applies_to: Type.Optional(Type.Array(Type.String())),
@@ -97,7 +106,7 @@ export function registerMemoryTools(pi: ExtensionAPI, client: McpClient): void {
       "'not_useful' demotes it, 'outdated' archives it. Call after using a recall hit.",
     parameters: Type.Object({
       memory_id: Type.String(),
-      result: StringEnum(["useful", "not_useful", "outdated"] as const),
+      result: stringEnum(["useful", "not_useful", "outdated"] as const),
       note: Type.Optional(Type.String()),
     }),
     execute: proxy("verify_memory"),
@@ -117,7 +126,7 @@ export function registerMemoryTools(pi: ExtensionAPI, client: McpClient): void {
           priority: Type.Optional(Type.String()),
           confidence: Type.Optional(Type.String()),
           tags: Type.Optional(Type.Array(Type.String())),
-          visibility: Type.Optional(StringEnum(["common", "agent_private"] as const)),
+          visibility: Type.Optional(stringEnum(["common", "agent_private"] as const)),
         },
         { additionalProperties: true, description: "Fields to change." },
       ),

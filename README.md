@@ -118,6 +118,7 @@ npm install
 npm run typecheck     # tsc --noEmit
 npm test              # vitest
 npm run validate      # vendored-code drift check
+npm run check-imports # guard: no runtime imports a git-installed package can't resolve
 npm run smoke         # load the extension under jiti (Pi's loader) with a mock API
 npm run vendor:sync   # re-vendor from a sibling the-librarian checkout
 ```

@@ -39,15 +39,14 @@
     "test": "vitest run",
     "vendor:sync": "node scripts/vendor-sync.mjs",
     "validate": "node scripts/validate.mjs",
+    "check-imports": "node scripts/check-imports.mjs",
     "smoke": "node scripts/smoke.mjs"
   },
   "peerDependencies": {
-    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "typebox": "*"
   },
   "devDependencies": {
-    "@earendil-works/pi-ai": "^0.75.5",
     "@earendil-works/pi-coding-agent": "^0.75.5",
     "@types/node": "^22.10.5",
     "typebox": "^1.1.38",
