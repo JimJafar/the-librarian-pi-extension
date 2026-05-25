@@ -1,0 +1,156 @@
+// The Librarian — Pi coding-agent extension.
+//
+// Wires Pi's lifecycle events to deterministic Librarian session automation and
+// registers the native /lib-session-* commands. Memory tools (recall/remember/…)
+// reach the model separately via mcp.json; this extension owns the SESSION layer.
+//
+// Event mapping (cf. @librarian/lifecycle's harness adapters):
+//   input            → privacy gate + idempotent auto start/resume   (skips slash commands)
+//   agent_start      → reset per-turn activity counters
+//   tool_call        → accumulate per-turn tool/file activity
+//   agent_end        → gated activity checkpoint
+//   session_compact  → checkpoint (high-value boundary)
+//   session_shutdown → pause (never end, §5.4)
+//   session_start    → refresh the footer status indicator (no session is
+//                       created just by opening Pi, §5.1)
+
+import type {
+  ExtensionAPI,
+  ExtensionContext,
+  ExtensionCommandContext,
+} from "@earendil-works/pi-coding-agent";
+import { buildStateLocation, readConfig } from "./config.js";
+import { createSessionClient } from "./session-client.js";
+import { createOrchestrator, type Orchestrator } from "./orchestrator.js";
+import { derivePiSourceRef } from "./source-ref.js";
+import { registerCommands } from "./commands.js";
+
+const STATUS_KEY = "librarian";
+const FILE_MUTATING_TOOLS = new Set(["edit", "write", "multiedit", "apply_patch"]);
+const CONFIG_HINT =
+  "The Librarian is not configured. Set LIBRARIAN_MCP_URL and LIBRARIAN_AGENT_TOKEN.";
+
+const COMMAND_VERBS = [
+  "lib-session-start",
+  "lib-session-list",
+  "lib-session-resume",
+  "lib-session-checkpoint",
+  "lib-session-pause",
+  "lib-session-end",
+  "lib-session-search",
+  "lib-toggle-private",
+] as const;
+
+export default function librarian(pi: ExtensionAPI): void {
+  const config = readConfig();
+
+  if (!config) {
+    // Dormant: no endpoint/token → no automatic calls. Still register the
+    // commands so they explain the missing configuration instead of being
+    // "unknown command".
+    for (const verb of COMMAND_VERBS) {
+      pi.registerCommand(verb, {
+        description: `${verb} (Librarian not configured)`,
+        handler: async (_args, ctx) => {
+          ctx.ui.notify(CONFIG_HINT, "warning");
+        },
+      });
+    }
+    return;
+  }
+
+  // Bind a non-null alias so nested closures keep the narrowing.
+  const cfg = config;
+  const client = createSessionClient({
+    endpoint: cfg.endpoint,
+    token: cfg.token,
+    timeoutMs: cfg.timeoutMs,
+  });
+
+  // The orchestrator is bound to a cwd; build it lazily from the first event's
+  // ctx.cwd (authoritative) and memoize for the process lifetime.
+  let orchestrator: Orchestrator | undefined;
+  function getOrchestrator(cwd: string): Orchestrator {
+    if (orchestrator) return orchestrator;
+    const sourceRef = derivePiSourceRef({
+      cwd,
+      piSessionId: pi.getSessionName(),
+      deviceId: cfg.deviceId,
+    });
+    orchestrator = createOrchestrator({
+      client,
+      location: buildStateLocation(cwd, cfg.projectKey),
+      sourceRef,
+      captureMode: cfg.captureMode,
+      projectKey: cfg.projectKey,
+      ...(cfg.stateBaseDir ? { stateOptions: { baseDir: cfg.stateBaseDir } } : {}),
+    });
+    return orchestrator;
+  }
+
+  function refreshStatus(ctx: ExtensionContext | ExtensionCommandContext): void {
+    if (!orchestrator) return;
+    const { sessionId, privacy } = orchestrator.status();
+    const label =
+      privacy === "private"
+        ? "librarian: off-record"
+        : sessionId
+          ? "librarian: on"
+          : undefined;
+    ctx.ui.setStatus(STATUS_KEY, label);
+  }
+
+  // --- Per-turn activity accounting (feeds the checkpoint gate) ------------
+  let turnToolCalls = 0;
+  let turnFiles = 0;
+
+  pi.on("agent_start", () => {
+    turnToolCalls = 0;
+    turnFiles = 0;
+  });
+
+  pi.on("tool_call", (event) => {
+    turnToolCalls += 1;
+    if (FILE_MUTATING_TOOLS.has(event.toolName)) turnFiles += 1;
+  });
+
+  // --- Auto start/resume + privacy gate -----------------------------------
+  pi.on("input", async (event, ctx) => {
+    // Our own injected messages never drive the lifecycle (avoids loops).
+    if (event.source === "extension") return { action: "continue" } as const;
+    const text = event.text.trim();
+    // Slash commands are handled by the command system, not the auto-lifecycle.
+    if (text.startsWith("/") || text.length === 0) return { action: "continue" } as const;
+    await getOrchestrator(ctx.cwd).handlePrompt(event.text);
+    refreshStatus(ctx);
+    return { action: "continue" } as const;
+  });
+
+  // --- Checkpoints --------------------------------------------------------
+  pi.on("agent_end", async (_event, ctx) => {
+    await getOrchestrator(ctx.cwd).handleCheckpoint({
+      trigger: "activity",
+      toolCalls: turnToolCalls,
+      filesTouched: turnFiles,
+    });
+  });
+
+  pi.on("session_compact", async (_event, ctx) => {
+    await getOrchestrator(ctx.cwd).handleCheckpoint({ trigger: "compaction" });
+  });
+
+  // --- Pause on shutdown (never end) --------------------------------------
+  pi.on("session_shutdown", async (_event, ctx) => {
+    await getOrchestrator(ctx.cwd).handlePause();
+  });
+
+  // --- Status indicator ---------------------------------------------------
+  pi.on("session_start", (_event, ctx) => {
+    // Constructing the orchestrator is cheap (no network); it lets the footer
+    // reflect any existing on-disk state for this cwd immediately.
+    getOrchestrator(ctx.cwd);
+    refreshStatus(ctx);
+  });
+
+  registerCommands(pi, getOrchestrator, { refreshStatus });
+}

@@ -1,0 +1,20 @@
+{
+  "source": "@librarian/lifecycle",
+  "monorepoSha": "a2fc490135ad75e0ad974950a14c772e49c64db5",
+  "lifecycleVersion": "0.0.0",
+  "generatedBy": "scripts/vendor-sync.mjs",
+  "files": {
+    "mcp-client.ts": {
+      "sourceSha256": "963186b745c91661423956c576c5f5b8c2d0d840aa2a633330c37642b7ef0d8c",
+      "vendoredSha256": "f5acf553848f39bf2b70bd472df40de2dde058db302f7ee5a59ad4f3c931fd2d"
+    },
+    "privacy.ts": {
+      "sourceSha256": "2f2ffe9351c6ea5d3eefc332e8bdfaa59f1ea74c02c665948c18ae58d8e84070",
+      "vendoredSha256": "10b4d237ba1b6127094e5a603083483c187057e849b1871c696e844f92f7e2b4"
+    },
+    "state.ts": {
+      "sourceSha256": "da9ccc5f5fdcef4f31bf3d93b30b1445b99aa1c0ab5ab450fd90ef663aa00d67",
+      "vendoredSha256": "de8580e918694f7235e64ee52ba621b7146e184db47d4353da026512452b6544"
+    }
+  }
+}

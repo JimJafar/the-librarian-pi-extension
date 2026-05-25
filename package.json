@@ -1,0 +1,43 @@
+{
+  "name": "the-librarian-pi-extension",
+  "version": "0.1.0",
+  "description": "Pi coding-agent package for The Librarian: durable memory + cross-harness session lifecycle, backed by a remote Librarian MCP server.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "author": {
+    "name": "Jim Sangwine",
+    "email": "jim@sangwine.net"
+  },
+  "homepage": "https://github.com/JimJafar/the-librarian-pi-extension",
+  "repository": "https://github.com/JimJafar/the-librarian-pi-extension",
+  "keywords": [
+    "pi-package",
+    "pi",
+    "memory",
+    "sessions",
+    "mcp",
+    "librarian",
+    "recall",
+    "handover"
+  ],
+  "pi": {
+    "extensions": ["extensions/librarian/index.ts"],
+    "skills": ["skills/use-the-librarian"]
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "vendor:sync": "node scripts/vendor-sync.mjs",
+    "validate": "node scripts/validate.mjs",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^0.75.5",
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.3",
+    "vitest": "^2.1.8"
+  }
+}

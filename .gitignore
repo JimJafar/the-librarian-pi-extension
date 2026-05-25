@@ -1,0 +1,14 @@
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+
+# Build / test output
+dist/
+coverage/
+
+# OS / editor
+.DS_Store
+*.log
+.idea/
+.vscode/

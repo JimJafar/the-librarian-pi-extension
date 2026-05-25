@@ -1,0 +1,14 @@
+{
+  "// note": "Copy to ~/.pi/agent/mcp.json (global) or .pi/mcp.json (project). This wires Pi's LLM directly to the remote Librarian MCP server, exposing the memory + session tools (recall, remember, verify_memory, start_session, ...). The extension drives the session LIFECYCLE deterministically and does not need this; this is purely so the model can call memory tools. Requires LIBRARIAN_MCP_URL and LIBRARIAN_AGENT_TOKEN in the environment.",
+  "mcpServers": {
+    "librarian": {
+      "type": "http",
+      "url": "${LIBRARIAN_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${LIBRARIAN_AGENT_TOKEN}"
+      },
+      "lifecycle": "lazy",
+      "directTools": ["recall", "remember", "verify_memory"]
+    }
+  }
+}
