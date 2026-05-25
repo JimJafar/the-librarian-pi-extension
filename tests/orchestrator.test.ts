@@ -7,10 +7,11 @@ import { buildStateLocation } from "../extensions/librarian/config.js";
 import { createOrchestrator } from "../extensions/librarian/orchestrator.js";
 import { McpClientError } from "../extensions/librarian/vendor/mcp-client.js";
 import { stateFilePath } from "../extensions/librarian/vendor/state.js";
-import type { ParsedSession, SessionClient } from "../extensions/librarian/session-client.js";
+import type { ListArgs, ParsedSession, SessionClient } from "../extensions/librarian/session-client.js";
 
 class FakeClient implements SessionClient {
   calls: string[] = [];
+  listArgs: ListArgs[] = [];
   listResult: ParsedSession[] = [];
   startId = "ses_new";
   failStart = false;
@@ -23,8 +24,9 @@ class FakeClient implements SessionClient {
     if (this.failStart) throw new McpClientError("network", "boom");
     return this.session(this.startId);
   }
-  async list(): Promise<ParsedSession[]> {
+  async list(args: ListArgs = {}): Promise<ParsedSession[]> {
     this.calls.push("list");
+    this.listArgs.push(args);
     return this.listResult;
   }
   async continue(id: string): Promise<string> {
@@ -120,6 +122,34 @@ describe("auto start / resume", () => {
     const outcome = await o.handlePrompt("hello");
     expect(outcome.action).toBe("error");
     expect(o.status().sessionId).toBeUndefined();
+  });
+});
+
+describe("cross-harness list", () => {
+  it("explicit list does NOT filter by harness (so non-Pi sessions are resumable)", async () => {
+    const client = new FakeClient();
+    const o = makeOrchestrator(client);
+    await o.list(false);
+    const args = client.listArgs.at(-1)!;
+    expect("harness" in args).toBe(false);
+    expect(args.statuses).toEqual(["active", "paused"]);
+  });
+
+  it("--include-ended widens scope without adding a harness filter", async () => {
+    const client = new FakeClient();
+    const o = makeOrchestrator(client);
+    await o.list(true);
+    const args = client.listArgs.at(-1)!;
+    expect("harness" in args).toBe(false);
+    expect(args.includeEnded).toBe(true);
+  });
+
+  it("auto start/resume DOES scope to this harness (no silent cross-harness attach)", async () => {
+    const client = new FakeClient();
+    const o = makeOrchestrator(client);
+    await o.handlePrompt("hello");
+    const args = client.listArgs.at(-1)!;
+    expect(args.harness).toBe("pi");
   });
 });
 
