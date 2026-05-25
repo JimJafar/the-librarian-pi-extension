@@ -28,6 +28,7 @@ function fail(msg) {
 function mockPi() {
   const commands = [];
   const events = [];
+  const tools = [];
   return {
     api: {
       registerCommand(name) {
@@ -36,7 +37,9 @@ function mockPi() {
       on(event) {
         events.push(event);
       },
-      registerTool() {},
+      registerTool(tool) {
+        tools.push(tool.name);
+      },
       registerShortcut() {},
       registerFlag() {},
       getFlag() {},
@@ -51,6 +54,7 @@ function mockPi() {
     },
     commands,
     events,
+    tools,
   };
 }
 
@@ -72,6 +76,15 @@ const EXPECTED_EVENTS = [
   "session_shutdown",
   "session_start",
 ];
+const EXPECTED_TOOLS = [
+  "recall",
+  "remember",
+  "propose_memory",
+  "verify_memory",
+  "update_memory",
+  "start_context",
+  "list_proposals",
+];
 
 function assertSameSet(label, actual, expected) {
   const a = [...actual].sort();
@@ -90,10 +103,11 @@ if (typeof factory !== "function") fail("default export is not a factory functio
   const saved = { url: process.env.LIBRARIAN_MCP_URL, tok: process.env.LIBRARIAN_AGENT_TOKEN };
   delete process.env.LIBRARIAN_MCP_URL;
   delete process.env.LIBRARIAN_AGENT_TOKEN;
-  const { api, commands, events } = mockPi();
+  const { api, commands, events, tools } = mockPi();
   factory(api);
   assertSameSet("dormant commands", commands, EXPECTED_COMMANDS);
   if (events.length !== 0) fail(`dormant mode should register no events, got [${events.join(", ")}]`);
+  if (tools.length !== 0) fail(`dormant mode should register no tools, got [${tools.join(", ")}]`);
   if (saved.url !== undefined) process.env.LIBRARIAN_MCP_URL = saved.url;
   if (saved.tok !== undefined) process.env.LIBRARIAN_AGENT_TOKEN = saved.tok;
 }
@@ -103,14 +117,17 @@ if (typeof factory !== "function") fail("default export is not a factory functio
   const saved = { url: process.env.LIBRARIAN_MCP_URL, tok: process.env.LIBRARIAN_AGENT_TOKEN };
   process.env.LIBRARIAN_MCP_URL = "https://librarian.example/mcp";
   process.env.LIBRARIAN_AGENT_TOKEN = "smoke-token";
-  const { api, commands, events } = mockPi();
+  const { api, commands, events, tools } = mockPi();
   factory(api);
   assertSameSet("configured commands", commands, EXPECTED_COMMANDS);
   assertSameSet("configured events", events, EXPECTED_EVENTS);
+  assertSameSet("configured tools", tools, EXPECTED_TOOLS);
   if (saved.url !== undefined) process.env.LIBRARIAN_MCP_URL = saved.url;
   else delete process.env.LIBRARIAN_MCP_URL;
   if (saved.tok !== undefined) process.env.LIBRARIAN_AGENT_TOKEN = saved.tok;
   else delete process.env.LIBRARIAN_AGENT_TOKEN;
 }
 
-console.log("smoke: OK — extension loads under jiti; commands and events register as expected");
+console.log(
+  "smoke: OK — extension loads under jiti; commands, events, and tools register as expected",
+);

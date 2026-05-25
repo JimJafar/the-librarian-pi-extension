@@ -4,6 +4,8 @@
 // (LIBRARIAN_MCP_URL + LIBRARIAN_AGENT_TOKEN). This mirrors the other harness
 // packages: no endpoint/token → no automatic calls, no surprises.
 
+import fs from "node:fs";
+import path from "node:path";
 import type { StateLocation } from "./vendor/state.js";
 import type { CaptureMode } from "./session-client.js";
 
@@ -52,6 +54,25 @@ export function readConfig(env: NodeJS.ProcessEnv = process.env): LibrarianConfi
   const deviceId = env.PI_DEVICE_ID?.trim();
   if (deviceId) config.deviceId = deviceId;
   return config;
+}
+
+/**
+ * Infer a project key from the working directory: the git repository name (the
+ * basename of the directory that holds `.git`) if inside a repo, else the folder
+ * name. This spares users an env var for the common case; `LIBRARIAN_PROJECT`
+ * still overrides it. Returns undefined only for a root/empty path.
+ */
+export function inferProjectKey(cwd: string): string | undefined {
+  let dir = cwd;
+  for (;;) {
+    // `.git` is a dir in a normal clone and a file in a worktree/submodule —
+    // existsSync matches both.
+    if (fs.existsSync(path.join(dir, ".git"))) return path.basename(dir) || undefined;
+    const parent = path.dirname(dir);
+    if (parent === dir) break; // reached the filesystem root
+    dir = parent;
+  }
+  return path.basename(cwd) || undefined;
 }
 
 /**

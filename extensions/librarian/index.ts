@@ -19,11 +19,13 @@ import type {
   ExtensionContext,
   ExtensionCommandContext,
 } from "@earendil-works/pi-coding-agent";
-import { buildStateLocation, readConfig } from "./config.js";
+import { buildStateLocation, inferProjectKey, readConfig } from "./config.js";
 import { createSessionClient } from "./session-client.js";
 import { createOrchestrator, type Orchestrator } from "./orchestrator.js";
 import { derivePiSourceRef } from "./source-ref.js";
 import { registerCommands } from "./commands.js";
+import { registerMemoryTools } from "./memory-tools.js";
+import { createMcpClient } from "./vendor/mcp-client.js";
 
 const STATUS_KEY = "librarian";
 const FILE_MUTATING_TOOLS = new Set(["edit", "write", "multiedit", "apply_patch"]);
@@ -61,17 +63,25 @@ export default function librarian(pi: ExtensionAPI): void {
 
   // Bind a non-null alias so nested closures keep the narrowing.
   const cfg = config;
-  const client = createSessionClient({
+  // One MCP client, shared by the session layer and the memory tools.
+  const mcp = createMcpClient({
     endpoint: cfg.endpoint,
     token: cfg.token,
-    timeoutMs: cfg.timeoutMs,
+    ...(cfg.timeoutMs !== undefined ? { timeoutMs: cfg.timeoutMs } : {}),
   });
+  const client = createSessionClient({ endpoint: cfg.endpoint, token: cfg.token }, mcp);
+
+  // Expose the Librarian's memory tools to the model directly (no mcp.json needed).
+  registerMemoryTools(pi, mcp);
 
   // The orchestrator is bound to a cwd; build it lazily from the first event's
   // ctx.cwd (authoritative) and memoize for the process lifetime.
   let orchestrator: Orchestrator | undefined;
   function getOrchestrator(cwd: string): Orchestrator {
     if (orchestrator) return orchestrator;
+    // Env override wins; otherwise infer from the repo/folder so users don't need
+    // to set LIBRARIAN_PROJECT for the common case.
+    const projectKey = cfg.projectKey ?? inferProjectKey(cwd);
     const sourceRef = derivePiSourceRef({
       cwd,
       piSessionId: pi.getSessionName(),
@@ -79,10 +89,10 @@ export default function librarian(pi: ExtensionAPI): void {
     });
     orchestrator = createOrchestrator({
       client,
-      location: buildStateLocation(cwd, cfg.projectKey),
+      location: buildStateLocation(cwd, projectKey),
       sourceRef,
       captureMode: cfg.captureMode,
-      projectKey: cfg.projectKey,
+      projectKey,
       ...(cfg.stateBaseDir ? { stateOptions: { baseDir: cfg.stateBaseDir } } : {}),
     });
     return orchestrator;
