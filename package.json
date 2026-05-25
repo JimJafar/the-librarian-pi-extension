@@ -24,6 +24,13 @@
     "extensions": ["extensions/librarian/index.ts"],
     "skills": ["skills/use-the-librarian"]
   },
+  "files": [
+    "extensions",
+    "skills",
+    "mcp.example.json",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
