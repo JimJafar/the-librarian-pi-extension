@@ -1,6 +1,6 @@
 {
   "name": "the-librarian-pi-extension",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Pi coding-agent package for The Librarian: durable memory + cross-harness session lifecycle, backed by a remote Librarian MCP server.",
   "license": "Apache-2.0",
   "type": "module",
