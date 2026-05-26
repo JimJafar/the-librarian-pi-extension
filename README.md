@@ -1,32 +1,28 @@
 # the-librarian-pi-extension
 
-A [Pi coding-agent](https://pi.dev) package that gives Pi durable memory and
-cross-harness session continuity, backed by a remote
-[Librarian](https://github.com/JimJafar/the-librarian) MCP server.
+[![CI](https://github.com/JimJafar/the-librarian-pi-extension/actions/workflows/ci.yml/badge.svg)](https://github.com/JimJafar/the-librarian-pi-extension/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
-It is the Pi sibling of the
-[Claude Code plugin](https://github.com/JimJafar/the-librarian-claude-plugin) and
-the [Hermes plugin](https://github.com/JimJafar/the-librarian-hermes-plugin): same
-session model, same `/lib-session-*` contract, native to each harness.
+A [Pi coding-agent](https://pi.dev) extension for
+[The Librarian](https://github.com/JimJafar/the-librarian) — durable memory and
+cross-harness session continuity, backed by a Librarian HTTP MCP server you
+point at (local or remote).
 
-## What it does
+## Features
 
-| Capability | How |
-| --- | --- |
-| **Memory tools** for the model (`recall`, `remember`, `verify_memory`, …) | Registered as native Pi tools by the extension — **no `mcp.json`, no separate adapter** |
-| **`/lib-session-*` commands** | Real Pi commands (deterministic — no LLM round-trip) |
-| **Automatic session lifecycle** | A TypeScript extension hooks Pi's events to start/checkpoint/pause sessions and gate privacy **before the agent runs** |
-
-> Pi's core has no built-in MCP support (the `mcp.json`/mcpServers feature lives in
-> third-party adapter extensions, not the runtime). So rather than make you install
-> an adapter and hand-place a config file, this extension talks to the remote
-> Librarian itself and exposes the memory tools to the model via `registerTool`.
-> One `pi install`, zero config.
-
-Unlike the hook-based harnesses (Claude Code, Codex), a Pi extension runs
-**in-process** in a long-lived TUI. So the Librarian calls here are fully **async**
-— the event loop is never blocked on network I/O — and privacy is enforced at the
-`input` event, before the model sees the prompt.
+- **Memory tools** — `recall` / `remember` / `verify_memory`, … registered as
+  native Pi tools (no `mcp.json`, no separate adapter).
+- **`/lib-session-*` + `/lib-toggle-private`** as real Pi commands —
+  deterministic, no LLM round-trip.
+- **Automatic session lifecycle** — start/resume on first prompt, checkpoint on
+  compaction and agent end, pause on shutdown.
+- **Off-record privacy gate** — say "off the record" (or run
+  `/lib-toggle-private`) and recording stops until you go back on. Enforced at
+  the `input` event, before the model sees the prompt.
+- **Fully async** — runs in-process in Pi's long-lived TUI; the event loop is
+  never blocked on network I/O.
+- **Fail-soft / fail-closed** — Librarian unreachable → recall degrades to
+  empty, writes are best-effort; local state I/O failure → no automatic call.
 
 ## Install
 
@@ -37,33 +33,39 @@ export LIBRARIAN_MCP_URL="https://your-librarian/mcp"
 export LIBRARIAN_AGENT_TOKEN="<your agent token>"
 ```
 
-Install the package (pick one):
+Then install the package:
 
 ```sh
-# From a git checkout
+# From GitHub
 pi install git:github.com/JimJafar/the-librarian-pi-extension
 
-# From a local clone
+# Or from a local clone
 pi install /path/to/the-librarian-pi-extension
 ```
 
-That's it — the memory tools and the session lifecycle are both live. Nothing else
-to copy or configure.
+That's it — memory tools and the session lifecycle are live. Without
+`LIBRARIAN_MCP_URL` + `LIBRARIAN_AGENT_TOKEN` the extension is **dormant**: the
+commands report the missing configuration and no automatic calls are made.
 
-Without `LIBRARIAN_MCP_URL` + `LIBRARIAN_AGENT_TOKEN` the extension is **dormant**:
-the commands are still registered but only report the missing configuration, and no
-automatic calls are made.
-
-## Configuration (environment)
+## Configure
 
 | Variable | Purpose |
 | --- | --- |
-| `LIBRARIAN_MCP_URL` | Remote Librarian MCP endpoint (required) |
+| `LIBRARIAN_MCP_URL` | Librarian HTTP MCP URL (required) |
 | `LIBRARIAN_AGENT_TOKEN` | Per-agent bearer token (required) |
-| `LIBRARIAN_PROJECT` / `LIBRARIAN_PROJECT_KEY` | Override the project key. **Optional** — defaults to the git repo name (else the folder name) of the working directory |
-| `LIBRARIAN_CAPTURE_MODE` | `summary` (default) or `off`. `log` is never auto-selected |
+| `LIBRARIAN_PROJECT` / `LIBRARIAN_PROJECT_KEY` | Override the project key (defaults to git repo name / folder name) |
+| `LIBRARIAN_CAPTURE_MODE` | `summary` (default) or `off` — `log` is never auto-selected |
 | `LIBRARIAN_TIMEOUT_MS` | Per-call network timeout |
-| `PI_DEVICE_ID` | Optional device id, used in `source_ref` |
+| `PI_DEVICE_ID` | Optional device id used in `source_ref` |
+
+### Remote Librarian
+
+The Librarian's no-auth mode is **localhost-only**, so a remote endpoint **must**
+carry a token over **HTTPS**. On the Librarian host:
+
+```sh
+LIBRARIAN_HOST=0.0.0.0 LIBRARIAN_AGENT_TOKENS="pi:<strong-token>" pnpm run serve
+```
 
 ## Commands
 
@@ -76,53 +78,19 @@ automatic calls are made.
 - `/lib-session-search <query>`
 - `/lib-toggle-private`
 
-See the bundled [`use-the-librarian`](./skills/use-the-librarian/SKILL.md) skill for
-the full memory + session discipline (states, visibility, verify-after-recall).
+See the bundled [`use-the-librarian`](./skills/use-the-librarian/SKILL.md) skill
+for the full memory + session discipline (states, visibility,
+verify-after-recall).
 
-## Automatic lifecycle
+## How it works
 
-| Pi event | Action |
+| Pi event | Effect |
 | --- | --- |
 | `input` (non-command prompts) | Privacy gate + idempotent auto start/resume |
-| `agent_end` | Activity checkpoint (rate-limited gate) |
+| `agent_end` | Activity checkpoint (rate-limited) |
 | `session_compact` | Checkpoint (high-value boundary) |
-| `session_shutdown` | Pause (never end) |
-
-Privacy: typing `/lib-toggle-private`, or natural-language markers like "off the
-record" / "don't remember this", switches off-record mode. Going off-record ends
-the attached session with a neutral reason and suppresses all automatic recording
-until you toggle back. Local state I/O failures **fail closed** — no automatic
-Librarian call is made.
-
-## Architecture
-
-- `extensions/librarian/index.ts` — the extension factory: event wiring + commands + tools.
-- `orchestrator.ts` — async session-lifecycle engine (an in-process port of
-  `@librarian/lifecycle`'s `session.ts` decisions: idempotent start/resume,
-  checkpoint gating, fail-closed privacy).
-- `session-client.ts` — async wrapper over the Librarian MCP server (tool arg
-  shapes pinned to `@librarian/mcp-server`).
-- `memory-tools.ts` — registers the memory tools (`recall`/`remember`/…) as native
-  Pi tools that proxy to the shared MCP client.
-- `config.ts`, `source-ref.ts` — environment + identity derivation (incl. project-key
-  inference from the git repo / folder name).
-- `extensions/librarian/vendor/` — three dependency-light leaf modules
-  (`mcp-client`, `privacy`, `state`) vendored from `@librarian/lifecycle`. They are
-  regenerated by `npm run vendor:sync` and drift-checked by `npm run validate`
-  against `vendor/PROVENANCE.json`.
-
-## Development
-
-```sh
-npm install
-npm run typecheck     # tsc --noEmit
-npm test              # vitest
-npm run validate      # vendored-code drift check
-npm run check-imports # guard: no runtime imports a git-installed package can't resolve
-npm run smoke         # load the extension under jiti (Pi's loader) with a mock API
-npm run vendor:sync   # re-vendor from a sibling the-librarian checkout
-```
+| `session_shutdown` | Pause (never auto-end) |
 
 ## License
 
-Apache-2.0
+Apache-2.0.
