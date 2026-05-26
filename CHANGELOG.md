@@ -19,6 +19,16 @@ changes from this point forward are catalogued here.
   AGENTS.md files in the four other Librarian repos share the same
   baseline.
 
+### Changed
+
+- **AGENTS.md §2** updated: the canonical TS privacy-detector source
+  in `the-librarian/integrations/shared/librarian-lifecycle/` was
+  deleted when the family went fully standalone. The vendored copy
+  at `extensions/librarian/vendor/privacy.ts` is now one of five peer
+  implementations across the family (Claude Code, Codex, Hermes,
+  OpenCode, this repo). Coordinate any marker-list change across
+  all five repos.
+
 ## [0.1.3] — 2026-05-26
 
 Public baseline. A [Pi coding-agent](https://pi.dev) package that gives Pi
