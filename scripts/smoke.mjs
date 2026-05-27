@@ -71,6 +71,7 @@ const EXPECTED_COMMANDS = [
 const EXPECTED_EVENTS = [
   "tool_call",
   "input",
+  "before_agent_start",
   "agent_end",
   "session_compact",
   "session_shutdown",
