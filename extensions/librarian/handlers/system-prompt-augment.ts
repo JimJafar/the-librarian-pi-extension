@@ -21,7 +21,12 @@ const CONV_STATE_TIMEOUT_MS = 500;
 
 export interface SystemPromptAugmentDeps {
   convStateGet: (convId: string, timeoutMs: number) => Promise<ConvStateRow | null>;
-  /** Returns true when the user has toggled the extension off-record. */
+  /**
+   * Returns true when the user has toggled the extension off-record. Sync
+   * (matches `orchestrator.status()` — the only caller — which reads
+   * in-memory state synchronously). The spec sketch showed an async signature
+   * but the implementation is sync because the underlying state read is too.
+   */
   isPrivate: () => boolean;
   /** Optional sidecar log. Errors during conv-state fetch are written here. */
   log?: (entry: Record<string, unknown>) => void;
