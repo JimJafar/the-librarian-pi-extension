@@ -13,6 +13,19 @@ changes from this point forward are catalogued here.
 
 ### Added
 
+- **Conv-state injection on every `before_agent_start`.** Implements
+  §4.9 of the upstream memory-domain-isolation rollout. A new handler
+  fires once per turn (after Pi has assembled the system prompt and
+  before the agent loop starts), resolves the calling
+  `conversation_state` row via `conv_state_get`, and appends the
+  canonical `<conversation-state>` block to `event.systemPrompt`. The
+  LLM sees the current `domain` / `session_id` / `off_record` on every
+  turn, defeating context-compaction-driven state loss. When no row
+  exists, the Librarian is unreachable, or the session is off-record,
+  the handler returns no value and Pi's system prompt is unchanged
+  (fail-soft per AGENTS.md §2). Co-operates with the SDK's chained-
+  extension contract so multiple plugins can augment the system prompt
+  without stomping each other.
 - `AGENTS.md` with the family-wide house rules (privacy, fail-soft,
   cross-repo contracts, CHANGELOG discipline, etc.) and the
   Pi-extension-specific build / test / gotcha notes. Sibling

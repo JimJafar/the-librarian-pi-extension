@@ -25,6 +25,8 @@ import { createOrchestrator, type Orchestrator } from "./orchestrator.js";
 import { derivePiSourceRef } from "./source-ref.js";
 import { registerCommands } from "./commands.js";
 import { registerMemoryTools } from "./memory-tools.js";
+import { createConvStateClient } from "./conv-state-client.js";
+import { registerSystemPromptAugment } from "./handlers/system-prompt-augment.js";
 import { createMcpClient } from "./vendor/mcp-client.js";
 
 const STATUS_KEY = "librarian";
@@ -73,6 +75,19 @@ export default function librarian(pi: ExtensionAPI): void {
 
   // Expose the Librarian's memory tools to the model directly (no mcp.json needed).
   registerMemoryTools(pi, mcp);
+
+  // Conv-state injection on every `before_agent_start` — implements §4.9
+  // of the upstream memory-domain-isolation spec. The handler is fail-soft
+  // end-to-end; an undefined orchestrator (before any input has fired) is
+  // treated as private so the Librarian is never called before the on-disk
+  // state has been consulted.
+  const convStateClient = createConvStateClient((timeoutMs) =>
+    createMcpClient({ endpoint: cfg.endpoint, token: cfg.token, timeoutMs }),
+  );
+  registerSystemPromptAugment(pi, {
+    convStateGet: (convId, timeoutMs) => convStateClient.convStateGet(convId, timeoutMs),
+    isPrivate: () => orchestrator === undefined || orchestrator.status().privacy === "private",
+  });
 
   // The orchestrator is bound to a cwd; build it lazily from the first event's
   // ctx.cwd (authoritative) and memoize for the process lifetime.
