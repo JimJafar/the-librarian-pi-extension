@@ -8,6 +8,12 @@
 // extensions' systemPrompt returns, so our append cooperates with any
 // other plugin that also augments the system prompt.
 //
+// sessions-rethink PR 6 — the local off-record state file is retired.
+// Private mode is now an in-conversation `[librarian:private=on|off]`
+// marker the LLM handles directly; the conv-state row's own `off_record`
+// field is surfaced by the renderer for the LLM to act on. There is no
+// privacy gate here.
+//
 // Fail-soft contract (AGENTS.md §2): every error path returns undefined
 // (no return value) so the SDK leaves the system prompt unchanged. The
 // user's turn is never blocked, no stack trace ever surfaces, and a
@@ -21,13 +27,6 @@ const CONV_STATE_TIMEOUT_MS = 500;
 
 export interface SystemPromptAugmentDeps {
   convStateGet: (convId: string, timeoutMs: number) => Promise<ConvStateRow | null>;
-  /**
-   * Returns true when the user has toggled the extension off-record. Sync
-   * (matches `orchestrator.status()` — the only caller — which reads
-   * in-memory state synchronously). The spec sketch showed an async signature
-   * but the implementation is sync because the underlying state read is too.
-   */
-  isPrivate: () => boolean;
   /** Optional sidecar log. Errors during conv-state fetch are written here. */
   log?: (entry: Record<string, unknown>) => void;
 }
@@ -38,13 +37,8 @@ export function registerSystemPromptAugment(
 ): void {
   pi.on("before_agent_start", async (event) => {
     try {
-      // Privacy gate: off-record suppresses every Librarian call. Checked
-      // BEFORE convStateGet so an off-record session can never observe
-      // network activity from this handler.
-      if (deps.isPrivate()) return;
-
       // Conv-id from the Pi session name. Stable per Pi session; same
-      // value the existing extension uses for source_ref derivation.
+      // value the previous extension used for source_ref derivation.
       const sessionName = pi.getSessionName();
       if (!sessionName) return;
 

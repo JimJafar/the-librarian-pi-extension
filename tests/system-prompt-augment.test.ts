@@ -53,7 +53,7 @@ describe("registerSystemPromptAugment", () => {
   it("appends the canonical block to event.systemPrompt on a state hit", async () => {
     const pi = fakePi("abc");
     const convStateGet = vi.fn(async () => STATE);
-    registerSystemPromptAugment(pi, { convStateGet, isPrivate: () => false });
+    registerSystemPromptAugment(pi, { convStateGet });
 
     const result = await pi.handler(event("BASE_SYSTEM"), {} as never);
 
@@ -75,7 +75,7 @@ describe("registerSystemPromptAugment", () => {
   it("returns undefined when convStateGet resolves null (miss)", async () => {
     const pi = fakePi("abc");
     const convStateGet = vi.fn(async () => null);
-    registerSystemPromptAugment(pi, { convStateGet, isPrivate: () => false });
+    registerSystemPromptAugment(pi, { convStateGet });
 
     const result = await pi.handler(event(), {} as never);
     expect(result).toBeUndefined();
@@ -88,7 +88,7 @@ describe("registerSystemPromptAugment", () => {
       throw new Error("boom");
     });
     const log = vi.fn();
-    registerSystemPromptAugment(pi, { convStateGet, isPrivate: () => false, log });
+    registerSystemPromptAugment(pi, { convStateGet, log });
 
     const result = await pi.handler(event(), {} as never);
     expect(result).toBeUndefined();
@@ -99,20 +99,10 @@ describe("registerSystemPromptAugment", () => {
     });
   });
 
-  it("never calls convStateGet when off-record", async () => {
-    const pi = fakePi("abc");
-    const convStateGet = vi.fn(async () => STATE);
-    registerSystemPromptAugment(pi, { convStateGet, isPrivate: () => true });
-
-    const result = await pi.handler(event(), {} as never);
-    expect(result).toBeUndefined();
-    expect(convStateGet).not.toHaveBeenCalled();
-  });
-
   it("returns undefined when pi.getSessionName() is undefined", async () => {
     const pi = fakePi(undefined);
     const convStateGet = vi.fn(async () => STATE);
-    registerSystemPromptAugment(pi, { convStateGet, isPrivate: () => false });
+    registerSystemPromptAugment(pi, { convStateGet });
 
     const result = await pi.handler(event(), {} as never);
     expect(result).toBeUndefined();

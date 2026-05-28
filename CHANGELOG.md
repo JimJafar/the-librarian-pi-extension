@@ -13,6 +13,36 @@ changes from this point forward are catalogued here.
 
 ### Changed
 
+- **Sessions rethink — breaking change (sessions-rethink PR 6).** The
+  entire session lifecycle is retired. The Pi extension becomes a
+  memory + handoffs surface (no on-disk state, no auto-bootstrap, no
+  privacy gate, no per-turn capture).
+  - **Removed slash commands**: `/lib-session-start`,
+    `/lib-session-list`, `/lib-session-resume`,
+    `/lib-session-checkpoint`, `/lib-session-pause`,
+    `/lib-session-end`, `/lib-session-search`, `/lib-toggle-private`.
+  - **Added slash commands**: `/handoff`, `/takeover`, `/learn`,
+    `/toggle-private`. Each surfaces a prompt that drives the LLM
+    through the agent-side flow.
+  - **Removed events**: `pi.on("input")` auto-bootstrap, `pi.on("tool_call")`
+    activity accounting, `pi.on("agent_end")` checkpoint gate,
+    `pi.on("session_compact")` checkpoint, `pi.on("session_shutdown")`
+    pause, `pi.on("session_start")` status refresh. Only the
+    `before_agent_start` conv-state injection survives.
+  - **Removed source**: `session-client.ts`, `orchestrator.ts` (602
+    lines), `lifecycle/privacy.ts`, `lifecycle/state.ts`,
+    `source-ref.ts`. Their tests too.
+  - **Slim config**: dropped `CaptureMode`, `buildStateLocation`,
+    `inferProjectKey` from `config.ts`. The state-keyed location and
+    capture-mode toggle were session-only.
+  - **Server compatibility**: requires a Librarian server running the
+    sessions-rethink PR 1 build (the `store_handoff` / `list_handoffs`
+    / `claim_handoff` and `conv_state_*` MCP tools must exist).
+  - **Migration**: existing operators should restart Pi after updating
+    the extension. The local `~/.librarian/harness-state/pi/...`
+    files the old extension maintained become inert — safe to delete
+    by hand.
+
 - **Lifecycle primitives moved from `extensions/librarian/vendor/` to
   `extensions/librarian/lifecycle/`.** The directory rename signals
   the architectural shift: the three modules (`mcp-client.ts`,
