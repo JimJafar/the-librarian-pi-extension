@@ -5,24 +5,22 @@
 
 A [Pi coding-agent](https://pi.dev) extension for
 [The Librarian](https://github.com/JimJafar/the-librarian) — durable memory and
-cross-harness session continuity, backed by a Librarian HTTP MCP server you
+cross-harness narrative handoffs, backed by a Librarian HTTP MCP server you
 point at (local or remote).
 
 ## Features
 
 - **Memory tools** — `recall` / `remember` / `verify_memory`, … registered as
   native Pi tools (no `mcp.json`, no separate adapter).
-- **`/lib-session-*` + `/lib-toggle-private`** as real Pi commands —
-  deterministic, no LLM round-trip.
-- **Automatic session lifecycle** — start/resume on first prompt, checkpoint on
-  compaction and agent end, pause on shutdown.
-- **Off-record privacy gate** — say "off the record" (or run
-  `/lib-toggle-private`) and recording stops until you go back on. Enforced at
-  the `input` event, before the model sees the prompt.
+- **Four slash commands** — `/handoff`, `/takeover`, `/learn`,
+  `/toggle-private`. Each surfaces a prompt that drives the LLM through the
+  agent-side flow.
+- **Per-turn conv-state injection** via `before_agent_start` — keeps the model
+  aware of which domain its memory writes route to, surviving compaction.
 - **Fully async** — runs in-process in Pi's long-lived TUI; the event loop is
   never blocked on network I/O.
-- **Fail-soft / fail-closed** — Librarian unreachable → recall degrades to
-  empty, writes are best-effort; local state I/O failure → no automatic call.
+- **Fail-soft** — Librarian unreachable → memory tools degrade to empty,
+  conv-state injection silently skips; the user's turn is never blocked.
 
 ## Install
 

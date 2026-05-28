@@ -1,7 +1,7 @@
 {
   "name": "the-librarian-pi-extension",
-  "version": "0.1.3",
-  "description": "Pi coding-agent package for The Librarian: durable memory + cross-harness session lifecycle, backed by a remote Librarian MCP server.",
+  "version": "0.2.0",
+  "description": "Pi coding-agent package for The Librarian: durable memory + cross-harness handoffs, backed by a remote Librarian MCP server.",
   "license": "Apache-2.0",
   "type": "module",
   "author": {
@@ -14,11 +14,11 @@
     "pi-package",
     "pi",
     "memory",
-    "sessions",
+    "handoff",
     "mcp",
     "librarian",
     "recall",
-    "handover"
+    "cross-harness"
   ],
   "pi": {
     "extensions": [

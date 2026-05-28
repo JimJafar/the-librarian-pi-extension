@@ -58,25 +58,11 @@ function mockPi() {
   };
 }
 
-const EXPECTED_COMMANDS = [
-  "lib-session-start",
-  "lib-session-list",
-  "lib-session-resume",
-  "lib-session-checkpoint",
-  "lib-session-pause",
-  "lib-session-end",
-  "lib-session-search",
-  "lib-toggle-private",
-];
-const EXPECTED_EVENTS = [
-  "tool_call",
-  "input",
-  "before_agent_start",
-  "agent_end",
-  "session_compact",
-  "session_shutdown",
-  "session_start",
-];
+// sessions-rethink PR 6 — only the four user-facing verbs survive and
+// the only event the extension binds is `before_agent_start` (conv-state
+// injection).
+const EXPECTED_COMMANDS = ["handoff", "takeover", "learn", "toggle-private"];
+const EXPECTED_EVENTS = ["before_agent_start"];
 const EXPECTED_TOOLS = [
   "recall",
   "remember",
