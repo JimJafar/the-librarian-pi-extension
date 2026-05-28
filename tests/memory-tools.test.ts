@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import type { McpClient } from "../extensions/librarian/vendor/mcp-client.js";
+import type { McpClient } from "../extensions/librarian/lifecycle/mcp-client.js";
 import { MEMORY_TOOL_NAMES, registerMemoryTools } from "../extensions/librarian/memory-tools.js";
 
 interface CapturedTool {

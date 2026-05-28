@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildStateLocation } from "../extensions/librarian/config.js";
 import { createOrchestrator } from "../extensions/librarian/orchestrator.js";
-import { McpClientError } from "../extensions/librarian/vendor/mcp-client.js";
-import { stateFilePath } from "../extensions/librarian/vendor/state.js";
+import { McpClientError } from "../extensions/librarian/lifecycle/mcp-client.js";
+import { stateFilePath } from "../extensions/librarian/lifecycle/state.js";
 import type { ListArgs, ParsedSession, SessionClient } from "../extensions/librarian/session-client.js";
 
 class FakeClient implements SessionClient {

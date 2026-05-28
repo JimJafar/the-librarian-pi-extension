@@ -1,16 +1,12 @@
 // Conv-state lookup helper for the §4.9 system-prompt injection.
 //
-// Wraps the vendored MCP client with the fail-soft semantics the spec
+// Wraps `./lifecycle/mcp-client` with the fail-soft semantics the spec
 // requires: every error path (network, timeout, parse, malformed row)
 // collapses to `null` so the caller — the `before_agent_start` hook —
 // can always treat the result as "inject the block or don't" without
 // branching on error type.
-//
-// The vendored mcp-client.ts is verbatim from `@librarian/lifecycle` and
-// carries a DO-NOT-EDIT banner; rather than break the vendor contract,
-// this module sits alongside it and uses `callTool` as its primitive.
 
-import type { McpClient, McpClientConfig } from "./vendor/mcp-client.js";
+import type { McpClient, McpClientConfig } from "./lifecycle/mcp-client.js";
 
 export interface ConvStateRow {
   conv_id: string;

@@ -27,7 +27,7 @@ import { registerCommands } from "./commands.js";
 import { registerMemoryTools } from "./memory-tools.js";
 import { createConvStateClient } from "./conv-state-client.js";
 import { registerSystemPromptAugment } from "./handlers/system-prompt-augment.js";
-import { createMcpClient } from "./vendor/mcp-client.js";
+import { createMcpClient } from "./lifecycle/mcp-client.js";
 
 const STATUS_KEY = "librarian";
 const FILE_MUTATING_TOOLS = new Set(["edit", "write", "multiedit", "apply_patch"]);

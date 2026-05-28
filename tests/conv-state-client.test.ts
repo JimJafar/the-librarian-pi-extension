@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createConvStateClient } from "../extensions/librarian/conv-state-client.js";
-import { type McpClient, McpClientError } from "../extensions/librarian/vendor/mcp-client.js";
+import { type McpClient, McpClientError } from "../extensions/librarian/lifecycle/mcp-client.js";
 
 function fakeMcp(impl: (name: string, args: Record<string, unknown>) => Promise<string>): McpClient {
   return { callTool: impl };

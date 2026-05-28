@@ -37,8 +37,6 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "vendor:sync": "node scripts/vendor-sync.mjs",
-    "validate": "node scripts/validate.mjs",
     "check-imports": "node scripts/check-imports.mjs",
     "smoke": "node scripts/smoke.mjs"
   },

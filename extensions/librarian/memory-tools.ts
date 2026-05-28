@@ -12,7 +12,7 @@
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Type, type TSchema } from "typebox";
-import type { McpClient } from "./vendor/mcp-client.js";
+import type { McpClient } from "./lifecycle/mcp-client.js";
 
 // A string-enum schema — `{ type: "string", enum: [...] }`, the Google/Gemini-
 // compatible shape that @earendil-works/pi-ai's StringEnum produces. We build it
