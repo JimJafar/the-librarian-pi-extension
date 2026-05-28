@@ -6,7 +6,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { StateLocation } from "./vendor/state.js";
+import type { StateLocation } from "./lifecycle/state.js";
 import type { CaptureMode } from "./session-client.js";
 
 export const HARNESS = "pi" as const;

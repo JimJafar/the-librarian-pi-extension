@@ -11,6 +11,26 @@ changes from this point forward are catalogued here.
 
 ## [Unreleased]
 
+### Changed
+
+- **Lifecycle primitives moved from `extensions/librarian/vendor/` to
+  `extensions/librarian/lifecycle/`.** The directory rename signals
+  the architectural shift: the three modules (`mcp-client.ts`,
+  `privacy.ts`, `state.ts`) are no longer synced from the main repo's
+  `@librarian/lifecycle` workspace package (which was deleted in
+  PR #153 of the main repo when the lifecycle family went fully
+  standalone). They are now in-tree source, owned by this repo, and
+  kept in lockstep with `the-librarian-claude-plugin/src/*.mts` (the
+  only other consumer) per the five-peer-implementations rule.
+
+  Removed in the same change: `scripts/vendor-sync.mjs`,
+  `scripts/validate.mjs`, `extensions/librarian/vendor/PROVENANCE.json`,
+  the `vendor:sync` and `validate` npm scripts, and the `npm run
+  validate` step in CI.
+
+- **AGENTS.md §2** path reference updated to the new location
+  (`extensions/librarian/lifecycle/privacy.ts`).
+
 ### Added
 
 - **Conv-state injection on every `before_agent_start`.** Implements
@@ -36,9 +56,9 @@ changes from this point forward are catalogued here.
 
 - **AGENTS.md §2** updated: the canonical TS privacy-detector source
   in `the-librarian/integrations/shared/librarian-lifecycle/` was
-  deleted when the family went fully standalone. The vendored copy
-  at `extensions/librarian/vendor/privacy.ts` is now one of five peer
-  implementations across the family (Claude Code, Codex, Hermes,
+  deleted when the family went fully standalone. The in-tree copy
+  at `extensions/librarian/lifecycle/privacy.ts` is now one of five
+  peer implementations across the family (Claude Code, Codex, Hermes,
   OpenCode, this repo). Coordinate any marker-list change across
   all five repos.
 

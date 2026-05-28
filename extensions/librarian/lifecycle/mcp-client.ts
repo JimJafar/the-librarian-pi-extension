@@ -1,6 +1,9 @@
-// VENDORED from @librarian/lifecycle (src/mcp-client.ts) — DO NOT EDIT BY HAND.
-// Re-sync with: npm run vendor:sync. Drift is checked by scripts/validate.mjs.
-// Provenance is recorded in ./PROVENANCE.json.
+// In-tree lifecycle primitive. Originally vendored from the
+// `@librarian/lifecycle` workspace package in the main repo, but that
+// package was deleted in PR #153. Lifecycle source now lives in-tree
+// here and in the-librarian-claude-plugin (the only other consumer).
+// AGENTS.md "five-peer implementations" rule still applies: keep this
+// in lockstep with the claude-plugin's `src/mcp-client.mts`.
 
 // Minimal MCP client for the Librarian HTTP server (remote lifecycle transport).
 //

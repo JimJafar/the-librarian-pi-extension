@@ -33,7 +33,7 @@ five Librarian plugins (Claude Code, Codex, Hermes, OpenCode, Pi) —
 **five peer implementations of the same behaviour, no single canonical
 source any longer.** Any marker-list change must land coordinated
 across all five repos in one go (or none). This repo's copy lives
-at `extensions/librarian/vendor/privacy.ts`.
+at `extensions/librarian/lifecycle/privacy.ts`.
 
 ### Fail-soft, never block the user's turn
 

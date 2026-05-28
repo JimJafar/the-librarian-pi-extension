@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { McpClient } from "../extensions/librarian/vendor/mcp-client.js";
+import type { McpClient } from "../extensions/librarian/lifecycle/mcp-client.js";
 import { NoSessionError, createSessionClient } from "../extensions/librarian/session-client.js";
 
 interface Call {

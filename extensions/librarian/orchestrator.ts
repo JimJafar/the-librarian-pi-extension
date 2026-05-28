@@ -16,7 +16,7 @@
 import {
   type PrivacyMarkers,
   detectPrivacySignal,
-} from "./vendor/privacy.js";
+} from "./lifecycle/privacy.js";
 import {
   type HarnessLibrarianState,
   type StateLocation,
@@ -26,8 +26,8 @@ import {
   StateLockError,
   loadState,
   saveState,
-} from "./vendor/state.js";
-import { McpClientError } from "./vendor/mcp-client.js";
+} from "./lifecycle/state.js";
+import { McpClientError } from "./lifecycle/mcp-client.js";
 import {
   type CaptureMode,
   type ParsedSession,

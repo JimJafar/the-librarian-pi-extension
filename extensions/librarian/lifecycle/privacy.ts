@@ -1,6 +1,7 @@
-// VENDORED from @librarian/lifecycle (src/privacy.ts) — DO NOT EDIT BY HAND.
-// Re-sync with: npm run vendor:sync. Drift is checked by scripts/validate.mjs.
-// Provenance is recorded in ./PROVENANCE.json.
+// In-tree lifecycle primitive — see ./mcp-client.ts for the
+// vendor-to-in-tree transition note. AGENTS.md "five-peer
+// implementations" rule still applies: keep in lockstep with the
+// claude-plugin's `src/privacy.mts`.
 
 // Privacy-marker detection (spec §3.1, §3.3).
 //

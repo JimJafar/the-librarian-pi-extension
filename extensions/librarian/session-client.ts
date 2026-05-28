@@ -9,7 +9,7 @@
 // Tool argument shapes are pinned to @librarian/mcp-server's tool input schemas
 // (start_session / list_sessions / continue_session / checkpoint_session /
 // pause_session / end_session / search_sessions). The prose responses are parsed
-// by the vendored helpers.
+// by the lifecycle helpers in ./lifecycle/mcp-client.
 
 import {
   type McpClient,
@@ -17,7 +17,7 @@ import {
   createMcpClient,
   parseSessionFromProse,
   parseSessionListFromProse,
-} from "./vendor/mcp-client.js";
+} from "./lifecycle/mcp-client.js";
 
 export type { ParsedSession };
 
