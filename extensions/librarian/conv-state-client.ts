@@ -10,7 +10,14 @@ import type { McpClient, McpClientConfig } from "./lifecycle/mcp-client.js";
 
 export interface ConvStateRow {
   conv_id: string;
-  domain?: string;
+  // `domain` is required on the wire — the SQLite column is `TEXT NOT
+  // NULL DEFAULT 'general'` and the upstream zod schema enforces
+  // `z.string().min(1)`. The type was relaxed to optional here for
+  // legacy reasons; tightening it forces compile-time errors on any
+  // future caller that tries to pass a partial row. The renderer
+  // still defends with a `?? "unknown"` fallback in case a malformed
+  // row slips through at runtime.
+  domain: string;
   session_id?: string | null;
   off_record?: boolean;
 }
